@@ -1,212 +1,226 @@
-/* --- 變數定義 (相同) --- */
+/* --- 
+   全新設計 - 現代儀表板風格 (**** 美化升級版 ****)
+   --- */
+
+/* --- 1. 變數定義 --- */
 :root {
     --font-main: 'Nunito', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    --color-bg: #fdfaf6;
-    --color-text: #34495e;
-    --color-border: #e0e0e0;
-    --color-white: #ffffff;
+    
+    /* 基礎顏色 */
+    --color-bg-top: #fdfdff;    /* (新) 漸層背景 - 頂部 */
+    --color-bg-bottom: #f8f9fa; /* (新) 漸層背景 - 底部 */
+    --color-surface: #ffffff;   /* 卡片背景 (白) */
+    --color-border: #e9ecef;    /* 邊框 (更淺的灰) */
+    
+    /* 文字顏色 */
+    --color-text-primary: #2c3e50; /* 主要文字 (深藍灰) */
+    --color-text-secondary: #7f8c8d; /* 次要文字 (灰) */
+
+    /* 玩家顏色 (不變) */
     --p1-color: #3498db;
     --p1-bg: #ecf5fb;
     --p2-color: #e74c3c;
     --p2-bg: #fdf5f4;
-    --btn-primary: #3498db;
-    --btn-success: #2ecc71;
-    --btn-danger: #e74c3c;
-    /* 【新】 AI 按鈕顏色 */
-    --btn-ai-on: #f39c12; /* 橘色 */
-    
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+    /* (新) 按鈕漸層顏色 */
+    --btn-primary-top: #3ea8f5;
+    --btn-primary-bottom: #3498db;
+    --btn-primary-border: #2980b9;
+    --btn-success-top: #35d882;
+    --btn-success-bottom: #2ecc71;
+    --btn-success-border: #27ae60;
+    --btn-danger-top: #f06151;
+    --btn-danger-bottom: #e74c3c;
+    --btn-danger-border: #c0392b;
+
+    /* 陰影 */
+    --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
     --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.08);
     --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.1);
+    --shadow-focus-ring: 0 0 0 3px rgba(52, 152, 219, 0.25);
+    
+    /* (新) 更柔和的卡片陰影 */
+    --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
 }
 
-/* --- 動畫定義 (相同) --- */
+/* --- 2. 動畫定義 (不變) --- */
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes modalFadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
 }
-
 @keyframes scorePulse {
-    0% { transform: scale(1.05); } 
-    50% { transform: scale(1.2); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-    100% { transform: scale(1.05); }
+    0% { transform: scale(1.03); }
+    50% { transform: scale(1.1); box-shadow: var(--shadow-md); }
+    100% { transform: scale(1.03); }
 }
 
-@keyframes animatedGradient {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-
-/* --- 基礎樣式 (相同) --- */
+/* --- 3. 基礎樣式 --- */
 * {
     box-sizing: border-box;
 }
 
-/* 【修改】 手機版 body 邊距縮小 */
 body {
     font-family: var(--font-main);
-    background: linear-gradient(170deg, var(--p1-bg) 0%, var(--color-bg) 100%);
-    color: var(--color-text);
+    /* (新) 改為漸層背景 */
+    background-color: var(--color-bg-bottom); 
+    background-image: linear-gradient(170deg, var(--color-bg-top) 0%, var(--color-bg-bottom) 100%);
+    
+    color: var(--color-text-primary);
     display: flex;
     flex-direction: column;
     align-items: center;
     min-height: 100vh;
     margin: 0;
-    padding: 20px 5px; /* 左右邊距 5px */
+    padding: 40px 20px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* 【修改】 手機版 h1 字體縮小 */
 h1 {
-    font-size: 2.5rem; /* 縮小字體 */
-    font-weight: 700;
-    background: linear-gradient(45deg, var(--p1-color), #2c3e50);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    color: transparent;
-    text-shadow: none;
+    font-size: 2.8rem;
+    font-weight: 800;
+    color: var(--color-text-primary);
     text-align: center;
-    margin-bottom: 20px;
-    background-size: 200% 200%;
-    animation: animatedGradient 6s ease infinite;
+    margin-bottom: 0.5rem;
+    /* (新) 增加 subtle text shadow */
+    text-shadow: 0 2px 4px rgba(0,0,0,0.03);
 }
 
-/* 【修改】 手機版 game-container 邊距縮小 */
+.subtitle {
+    font-size: 1.2rem; /* (新) 稍稍放大 */
+    font-weight: 400;
+    color: var(--color-text-secondary);
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 2rem;
+    letter-spacing: 0.5px; /* (新) 增加字距 */
+}
+
+/* --- 4. 主要版面配置 --- */
 #game-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    grid-template-areas: "primary secondary";
+    gap: 30px;
+    
     width: 100%;
-    max-width: 750px; 
-    background-color: var(--color-white);
-    padding: 15px; /* 邊距縮小 */
+    max-width: 1200px; 
+    background-color: var(--color-surface);
+    padding: 30px;
     border-radius: 20px;
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--color-border);
+    
+    /* (新) 移除邊框，使用更柔和的陰影 */
+    box-shadow: var(--shadow-card);
+    border: none;
+    
     animation: fadeIn 0.6s ease-out;
 }
 
-/* --- 計分板 (相同) --- */
+#game-primary-column {
+    grid-area: primary;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+#game-secondary-column {
+    grid-area: secondary;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* --- 5. 遊戲元件 --- */
+
+/* 5a. 計分板 */
 #status-bar {
     display: flex;
     justify-content: space-between;
     width: 100%;
-    gap: 20px; 
+    gap: 15px;
 }
 
 .score-box {
     flex: 1;
     font-size: 1.15em;
-    font-weight: 600;
-    padding: 12px 15px; 
-    border-radius: 10px;
-    background-color: var(--color-white);
-    color: #95a5a6;
-    border: 2px solid var(--color-border);
-    box-shadow: var(--shadow-sm);
+    font-weight: 700;
+    padding: 16px;
+    border-radius: 12px;
+    /* (新) 改為白色背景 + 邊框，使其與卡片一致 */
+    background-color: var(--color-surface);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border); 
     text-align: center;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: all 0.2s ease;
 }
 
 .score-box.active {
-    border-color: var(--p1-color);
-    color: var(--p1-color);
     background-color: var(--p1-bg);
-    transform: scale(1.05);
-    box-shadow: 0 3px 8px rgba(52, 152, 219, 0.3);
+    color: var(--p1-color);
+    transform: scale(1.03);
+    box-shadow: 0 4px 10px rgba(52, 152, 219, 0.2);
+    border-color: transparent; /* (新) 啟用時移除邊框 */
 }
 
 .score-box.player2.active {
-    border-color: var(--p2-color);
-    color: var(--p2-color);
     background-color: var(--p2-bg);
-    box-shadow: 0 3px 8px rgba(231, 76, 60, 0.3);
+    color: var(--p2-color);
+    box-shadow: 0 4px 10px rgba(231, 76, 60, 0.2);
+    border-color: transparent; /* (新) 啟用時移除邊框 */
 }
 
 .score-box.score-pulse {
     animation: scorePulse 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-/* 【修改】 畫布 (增加 touch-action) */
+/* 5b. AI 思考訊息 */
+#ai-thinking-message {
+    font-size: 1em;
+    font-weight: 600;
+    color: #b95000; 
+    padding: 12px 15px;
+    text-align: center;
+    border-radius: 10px;
+    background-color: #fff8e1; 
+    border: 1px solid #ffecb3;
+    width: 100%;
+}
+
+/* 5c. 畫布 */
 canvas {
-    background-color: var(--color-white);
-    border-radius: 12px;
-    box-shadow: var(--shadow-md);
+    /* (新) 增加微妙的背景漸層，使其與 UI 區分 */
+    background-image: radial-gradient(circle, #ffffff 0%, #fdfdff 90%, #f8f9fa 100%);
+    border-radius: 16px;
+    box-shadow: var(--shadow-soft);
     border: 1px solid var(--color-border);
     cursor: pointer;
     width: 100%;
     height: auto;
     transition: box-shadow 0.3s ease;
-    /* 【新】 防止手機雙擊縮放 */
     touch-action: manipulation;
 }
-
 canvas:hover {
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-md);
 }
 
+/* --- 6. 控制元件 --- */
 
-/* 【修改】 按鈕 (微調 padding) */
-.btn {
-    font-family: var(--font-main);
-    font-size: 1rem;
-    font-weight: 700;
-    padding: 15px 20px; /* 增加垂直 padding */
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
-    transition: all 0.2s ease-in-out;
-    color: white;
-    width: 100%;
-}
-
-.btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
-}
-.btn:active {
-    transform: translateY(1px);
-    box-shadow: 0 2px 4px rgba(50, 50, 93, 0.1), 0 1px 2px rgba(0, 0, 0, 0.08);
-}
-.btn.primary { background-color: var(--btn-primary); }
-.btn.success { background-color: var(--btn-success); }
-.btn.danger  { background-color: var(--btn-danger); }
-
-/* 【新】 AI 按鈕樣式 */
-.btn.ai-off { background-color: var(--btn-primary); }
-.btn.ai-on  { background-color: var(--btn-ai-on); }
-
-
-/* --- 按鈕控制區 (相同) --- */
+/* 6a. 確認/取消列 */
 #action-bar {
     display: flex;
     gap: 10px;
     width: 100%;
-    flex-direction: column;
+    flex-direction: row; 
     transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
     opacity: 0;
     transform: translateY(10px);
     visibility: hidden;
     pointer-events: none;
 }
-
 #action-bar.visible {
     opacity: 1;
     transform: translateY(0);
@@ -214,15 +228,161 @@ canvas:hover {
     pointer-events: auto;
 }
 
-/* 【修改】 遊戲控制區 (改為 flex) */
+/* 6b. 主要控制區 (右欄) */
 #game-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr; 
+    gap: 15px;
     width: 100%;
+    
+    margin-top: 10px;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-border);
 }
 
-/* --- 遊戲結束 Modal (相同) --- */
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.control-label {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase; 
+    line-height: 1;
+}
+
+/* (新) 批次對戰控制器樣式 */
+#batch-controls {
+    background-color: var(--p1-bg);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid var(--p1-color);
+}
+#batch-controls .control-label {
+    color: var(--p1-color);
+}
+.batch-input-group {
+    display: grid;
+    grid-template-columns: 1fr auto auto; 
+    gap: 10px;
+}
+#batch-status-message {
+    font-size: 0.9em;
+    font-weight: 600;
+    color: var(--p1-color);
+    margin: 5px 0 0 0;
+    min-height: 1.2em; /* 避免跳動 */
+}
+
+
+/* 6c. 下拉式選單 */
+.control-select {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 10px;
+    /* (新) 改為白色背景 + 較粗邊框 */
+    border: 2px solid var(--color-border);
+    background-color: var(--color-surface); 
+    box-shadow: none;
+    font-family: var(--font-main);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%237f8c8d'%3E%3Cpath fill-rule='evenodd' d='M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 1.2em;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.control-select:focus {
+    outline: none;
+    border-color: var(--p1-color);
+    box-shadow: var(--shadow-focus-ring);
+}
+
+/* (新) 批次對戰輸入框 (繼承 .control-select) */
+#batch-count-input {
+    padding: 12px 15px; 
+}
+
+
+/* 6d. 按鈕 (**** 新功能 ****) 3D 按鈕 */
+.btn {
+    font-family: var(--font-main);
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 14px 20px;
+    border: none; /* (新) 移除頂部邊框 */
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease-out; /* (新) 調整 transition */
+    color: white;
+    width: 100%;
+    
+    /* (新) 增加 3D 效果 */
+    border-bottom: 3px solid rgba(0, 0, 0, 0.2);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+.btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.05);
+    box-shadow: var(--shadow-md); /* (新) 增強陰影 */
+}
+.btn:active {
+    transform: translateY(1px); /* (新) 按下效果 */
+    filter: brightness(0.95);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); /* (新) 內陰影 */
+    border-bottom-width: 1px; /* (新) 減少底部邊框 */
+}
+.btn:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus-ring);
+}
+
+/* (新) 禁用按鈕的樣式 */
+.btn:disabled,
+.control-select:disabled {
+    cursor: not-allowed;
+    background-color: var(--color-border);
+    background-image: none; /* (新) 移除漸層 */
+    color: var(--color-text-secondary);
+    opacity: 0.7;
+    transform: none;
+    box-shadow: none;
+    border-bottom: 3px solid rgba(0, 0, 0, 0.1); /* (新) 保持禁用時的邊框 */
+}
+/* 覆蓋 .btn.success:disabled */
+.btn.success:disabled,
+.btn.primary:disabled,
+.btn.danger:disabled {
+    background-color: var(--color-border);
+    background-image: none;
+}
+
+/* (新) 套用漸層和邊框顏色 */
+.btn.primary { 
+    background-image: linear-gradient(to bottom, var(--btn-primary-top), var(--btn-primary-bottom));
+    border-bottom-color: var(--btn-primary-border);
+}
+.btn.success { 
+    background-image: linear-gradient(to bottom, var(--btn-success-top), var(--btn-success-bottom));
+    border-bottom-color: var(--btn-success-border);
+}
+.btn.danger  { 
+    background-image: linear-gradient(to bottom, var(--btn-danger-top), var(--btn-danger-bottom));
+    border-bottom-color: var(--btn-danger-border);
+}
+
+
+/* --- 7. 遊戲結束 Modal --- */
 #modal-overlay {
     position: fixed;
     top: 0;
@@ -235,62 +395,112 @@ canvas:hover {
     justify-content: center;
     z-index: 100;
     animation: modalFadeIn 0.3s ease;
+    backdrop-filter: blur(3px);
+    
+    cursor: pointer; 
 }
 
 #game-over-message {
-    background: var(--color-white);
-    padding: 40px 50px;
-    border-radius: 20px;
+    background: var(--color-surface);
+    padding: 40px;
+    border-radius: 20px; 
     box-shadow: var(--shadow-lg);
     text-align: center;
     animation: fadeIn 0.3s ease-out; 
+    
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 320px; 
+    
+    cursor: default;
 }
 
 #winner-text {
     display: block;
     font-size: 1.8em;
     font-weight: 700;
-    color: var(--color-text);
+    color: var(--color-text-primary);
+    margin-bottom: 10px; 
+}
+
+#final-score-text {
+    display: block;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: var(--color-text-secondary);
     margin-bottom: 25px; 
 }
 
-#reset-button-modal {
-    width: 100%; 
+#modal-button-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr; 
+    gap: 12px; 
+    width: 100%;
+}
+
+#modal-button-group .reset-full-width {
+    grid-column: 1 / -1; 
+}
+
+
+#ai-log-output {
+    background-color: var(--color-bg); 
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 10px;
+    height: 150px; 
+    overflow-y: auto;  
+    font-family: monospace; 
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    white-space: pre-wrap; 
+    word-wrap: break-word;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.03);
 }
 
 .hidden {
     display: none !important;
 }
 
-/* --- 【修改】 媒體查詢 (補回桌機版樣式) --- */
-@media (min-width: 768px) {
-    /* 恢復桌機版 body 邊距 */
+/* --- 8. 響應式設計 (手機版) --- */
+@media (max-width: 900px) {
     body {
-        padding: 40px 20px;
+        padding: 20px 10px;
     }
-
-    /* 恢復桌機版 h1 字體 */
+    
     h1 {
-        font-size: 2.8rem;
+        font-size: 2.2rem;
+    }
+    .subtitle {
+        font-size: 1rem;
     }
     
-    /* 恢復桌機版 game-container 邊距 */
     #game-container {
-        padding: 30px;
+        grid-template-columns: 1fr;
+        grid-template-areas: 
+            "secondary"
+            "primary";
+        padding: 20px;
+        gap: 25px;
     }
 
-    #action-bar {
-        flex-direction: row;
-        justify-content: center; 
-    }
-    
-    /* 【修改】 game-controls 桌機版改為橫向 */
+    /* 控制區改為單欄 */
     #game-controls {
-        flex-direction: row;
-        justify-content: center;
+        grid-template-columns: 1fr;
     }
     
-    .btn {
-        width: auto; 
+    /* (新) 手機上批次按鈕也變單欄 */
+    .batch-input-group {
+        grid-template-columns: 1fr;
+    }
+    
+    /* 確認/取消按鈕改為堆疊 */
+    #action-bar {
+        flex-direction: column;
+    }
+
+    #modal-button-group {
+        grid-template-columns: 1fr;
     }
 }

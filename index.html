@@ -1,47 +1,112 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-R">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>點點圍三角加入電腦對戰</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <title>點點圍三角收集資料</title> <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="style.css" >
 </head>
 <body>
 
-    <h1>點點圍三角加入電腦對戰</h1>
+    <h1>點點圍三角收集資料</h1>
+    <p class="subtitle">連點成線、圍出三角。支援與朋友或電腦對戰！</p>
 
     <div id="game-container">
-        <div id="status-bar">
-            <div id="player1-score" class="score-box active">
-                玩家 1: <span id="score1">0</span>
+
+        <div id="game-primary-column">
+            <canvas id="game-canvas"></canvas>
+            
+            <div id="action-bar">
+                <button id="confirm-line-button" class="btn primary">確認連線</button>
+                <button id="cancel-line-button" class="btn danger">取消選取</button>
             </div>
-            <div id="player2-score" class="score-box">
-                玩家 2: <span id="score2">0</span>
+        </div>
+
+        <div id="game-secondary-column">
+            <div id="status-bar">
+                <div id="player1-score" class="score-box active">
+                    玩家 1: <span id="score1">0</span>
+                </div>
+                <div id="player2-score" class="score-box">
+                    玩家 2: <span id="score2">0</span>
+                </div>
+            </div>
+
+            <div id="ai-thinking-message" class="hidden">電腦思考中...</div>
+
+            <div id="ai-log-container" class="control-group hidden">
+                <label class="control-label">AI 模擬紀錄</label>
+                <pre id="ai-log-output"></pre>
+            </div>
+            
+            <div id="batch-controls" class="control-group">
+                <label class="control-label">批次對戰 (僅限 C v C)</label>
+                <div class="batch-input-group">
+                    <input type="number" id="batch-count-input" class="control-select" value="10" min="1" max="1000">
+                    <button id="start-batch-button" class="btn success">開始批次</button>
+                    <button id="stop-batch-button" class="btn danger hidden">終止批次</button> 
+                </div>
+                <p id="batch-status-message"></p>
+            </div>
+            <div id="game-controls">
+                <div class="control-group">
+                    <label for="board-size-select" class="control-label">棋盤大小</label>
+                    <select id="board-size-select" class="control-select">
+                        <option value="small">小</option>
+                        <option value="medium" selected>中</option>
+                        <option value="large">大</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="line-length-select" class="control-label">連線格數</label>
+                    <select id="line-length-select" class="control-select">
+                        <option value="1" selected>1 格</option> <option value="2">2 格</option>
+                        <option value="3">3 格</option> <option value="4">4 格</option>
+                        <option value="5">5 格</option>
+                    </select>
+                    </div>
+                <div class="control-group">
+                    <label for="game-mode-select" class="control-label">遊戲模式</label>
+                    <select id="game-mode-select" class="control-select">
+                        <option value="0" selected>玩家 V.S. 玩家</option>
+                        <option value="1">玩家 V.S. 電腦</option>
+                        <option value="2">電腦 V.S. 電腦</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">重新開始</label>
+                    <button id="reset-button" class="btn success">開始新遊戲</button>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">匯出紀錄 (CSV)</label>
+                    <button id="export-log-button" class="btn primary">下載遊戲紀錄</button>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">匯出棋盤 (PNG)</label>
+                    <button id="export-png-button" class="btn primary">下載棋盤圖片</button>
+                </div>
+
             </div>
         </div>
 
-        <canvas id="game-canvas"></canvas>
-
-        <div id="action-bar">
-            <button id="confirm-line-button" class="btn primary">確認連線</button>
-            <button id="cancel-line-button" class="btn danger">取消選取</button>
-        </div>
-
-        <div id="game-controls">
-            <button id="toggle-ai-button" class="btn">V.S. 電腦 (已關閉)</button>
-            <button id="reset-button" class="btn success">重新開始</button>
-        </div>
-    </div>
-
+    </div> 
+    
     <div id="modal-overlay" class="hidden">
         <div id="game-over-message">
             <span id="winner-text"></span>
-            <button id="reset-button-modal" class="btn success">重新開始</button>
+            <span id="final-score-text"></span> 
+            
+            <div id="modal-button-group">
+                <button id="reset-button-modal" class="btn success reset-full-width">重新開始</button>
+                
+                <button id="export-log-button-modal" class="btn primary">下載紀錄 (CSV)</button>
+                <button id="export-png-button-modal" class="btn primary">下載棋盤 (PNG)</button>
+            </div>
         </div>
     </div>
 
