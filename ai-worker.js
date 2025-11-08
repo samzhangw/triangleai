@@ -6,7 +6,8 @@
  * 2. 迭代加深 (Iterative Deepening)
  * 3. 置換表 (Transposition Table)
  * 4. 啟發式評估 (Heuristic)
- * 5. (**** 錯誤修正版 ****) 靜態搜尋 (Quiescence Search)
+ * 5. 靜態搜尋 (Quiescence Search)
+ * 6. (**** 新功能 ****) 增加隨機性以打破平手
  * ============================================
  */
 
@@ -16,8 +17,7 @@ let dots = [];
 let totalTriangles = 0;
 let REQUIRED_LINE_LENGTH = 1;
 
-// (新功能) 靜態搜尋的最大額外深度
-const QUIESCENCE_MAX_DEPTH = 3; 
+const QUIESCENCE_MAX_DEPTH = 4; 
 
 // --- 2. 訊息處理 ---
 
@@ -33,7 +33,7 @@ self.onmessage = (e) => {
 
         // 清空置換表
         transpositionTable.clear();
-        logToMain(`--- [Worker] 置換表已清除 (導入靜態搜尋 - BugFix) ---`);
+        logToMain(`--- [Worker] 置換表已清除 (模式: 終極深度 + 隨機性) ---`);
 
         // 開始運算
         const bestMove = findBestAIMove(
@@ -306,26 +306,17 @@ function findAllScoringMoves(currentLines, currentTriangles, player) {
     const allValidMoves = findAllValidMoves(currentLines);
 
     for (const move of allValidMoves) {
-        // 為了速度，這裡做一個快速檢查 (檢查是否能完成三角形)
-        // (這是一個簡化版的 simulateMove)
         let scoreGained = 0;
         const segmentIds = move.segmentIds;
-
-        // 檢查這個 move 碰到的 "新" 線段
         const newSegments = segmentIds.filter(id => currentLines[id] && !currentLines[id].drawn);
-        if (newSegments.length === 0) continue; // (如果沒有畫到新線，這不是一個有效的 "得分" 檢查)
+        if (newSegments.length === 0) continue; 
 
-        // 檢查所有 *未完成* 的三角形
         currentTriangles.forEach(tri => {
             if (!tri.filled) {
-                // 檢查這個三角形是否 *本來* 差 N 條線
                 let missingKeys = tri.lineKeys.filter(key => !currentLines[key] || !currentLines[key].drawn);
-                
-                // 檢查 newSegments 是否補全了 missingKeys
                 let allMissingKeysCovered = missingKeys.every(mKey => segmentIds.includes(mKey));
 
                 if (missingKeys.length > 0 && allMissingKeysCovered) {
-                    // 檢查 *其他* 線是否已經畫好了
                     let otherKeysDrawn = tri.lineKeys
                         .filter(key => !missingKeys.includes(key))
                         .every(oKey => currentLines[oKey] && currentLines[oKey].drawn);
@@ -347,7 +338,6 @@ function findAllScoringMoves(currentLines, currentTriangles, player) {
 
 /**
  * 靜態搜尋 (Quiescence Search)
- * (此函式邏輯是正確的：得分 = 保持同玩家，深度-1)
  */
 function quiescenceSearch(currentLines, currentTriangles, depth, isMaximizingPlayer, alpha, beta) {
     
@@ -381,7 +371,6 @@ function quiescenceSearch(currentLines, currentTriangles, depth, isMaximizingPla
         let bestValue = standPatScore;
         alpha = Math.max(alpha, bestValue);
 
-        // (*** 關鍵 ***) 只搜尋 *能得分* 的走法
         const scoringMoves = findAllScoringMoves(currentLines, currentTriangles, 2); // P2
         
         for (const move of scoringMoves) {
@@ -390,7 +379,6 @@ function quiescenceSearch(currentLines, currentTriangles, depth, isMaximizingPla
             
             const immediateScore = sim.scoreGained * 1000; 
             
-            // 遞迴呼叫 *靜態搜尋* (深度 -1)，*保持* P2 (true)
             const futureValue = quiescenceSearch(sim.newLines, sim.newTriangles, depth - 1, true, alpha, beta);
             const totalValue = immediateScore + futureValue; 
 
@@ -410,7 +398,6 @@ function quiescenceSearch(currentLines, currentTriangles, depth, isMaximizingPla
         let bestValue = standPatScore;
         beta = Math.min(beta, bestValue);
 
-        // (*** 關鍵 ***) 只搜尋 *能得分* 的走法
         const scoringMoves = findAllScoringMoves(currentLines, currentTriangles, 1); // P1
         
         for (const move of scoringMoves) {
@@ -419,7 +406,6 @@ function quiescenceSearch(currentLines, currentTriangles, depth, isMaximizingPla
             
             const immediateScore = sim.scoreGained * 1000;
             
-            // 遞迴呼叫 *靜態搜尋* (深度 -1)，*保持* P1 (false)
             const futureValue = quiescenceSearch(sim.newLines, sim.newTriangles, depth - 1, false, alpha, beta);
             const totalValue = -immediateScore + futureValue; // P1 得分是負分
 
@@ -485,14 +471,9 @@ function minimax(currentLines, currentTriangles, depth, isMaximizingPlayer, alph
             const sim = simulateMove(move, currentLines, currentTriangles, 2); // 2 = P2
             if (!sim) continue;
             
-            // (**** BugFix ****)
-            // 立即得分的權重 (1000) 必須在這裡計算，因為靜態搜尋只在 depth=0 時觸發
             const immediateScore = sim.scoreGained * 1000;
             
-            // (**** BugFix ****)
-            // 移除 "isStillMaximizing" 邏輯。
-            // 正常的 minimax 搜尋 *總是* 假設換人，深度-1。
-            // (得分連鎖效應將由 depth=0 時的 quiescenceSearch 處理)
+            // (**** BugFix 後的正確邏輯 ****)
             const futureValue = minimax(sim.newLines, sim.newTriangles, depth - 1, false, alpha, beta);
             const totalValue = immediateScore + futureValue; 
 
@@ -513,8 +494,7 @@ function minimax(currentLines, currentTriangles, depth, isMaximizingPlayer, alph
             
             const immediateScore = sim.scoreGained * 1000; 
             
-            // (**** BugFix ****)
-            // 移除 "isStillMinimizing" 邏輯。
+            // (**** BugFix 後的正確邏輯 ****)
             const futureValue = minimax(sim.newLines, sim.newTriangles, depth - 1, true, alpha, beta); 
             const totalValue = -immediateScore + futureValue; 
 
@@ -535,16 +515,16 @@ function minimax(currentLines, currentTriangles, depth, isMaximizingPlayer, alph
 }
 
 /**
- * 動態搜尋深度
+ * (**** 智能提升版 ****) 動態搜尋深度
  */
 function getAIDepth() {
-    // (註：由於靜態搜尋的存在，基礎深度 5 已經非常強大且耗時)
+    // (註：所有深度 +1)
     switch (REQUIRED_LINE_LENGTH) {
-        case 1: return 5; 
-        case 2: return 6;
-        case 3: return 7;
-        case 4: case 5: return 8;
-        default: return 6;
+        case 1: return 6; // (原 5)
+        case 2: return 7; // (原 6)
+        case 3: return 8; // (原 7)
+        case 4: case 5: return 9; // (原 8)
+        default: return 7; // (原 6)
     }
 }
 
@@ -579,8 +559,16 @@ function findBestAIMove(currentLines, currentTriangles, player) {
         return { move, value: totalValue };
     });
 
-    if (isMaximizingPlayer) scoredMoves.sort((a, b) => b.value - a.value); // 高 -> 低
-    else scoredMoves.sort((a, b) => a.value - b.value); // 低 -> 高
+    // (**** 新功能 ****) 增加隨機性來打破平手
+    // 1. 根據玩家是 Max 還是 Min 來決定主要排序方向
+    // 2. 如果分數 (value) 相同，則使用 Math.random() 來隨機排序
+    scoredMoves.sort((a, b) => {
+        if (a.value === b.value) {
+            return Math.random() - 0.5; // <--- 隨機打破平手
+        }
+        return isMaximizingPlayer ? b.value - a.value : a.value - b.value;
+    });
+    // (**** 新功能) 結束 ****
     
     // 迭代加深 (Iterative Deepening)
     let bestMove = null;
@@ -604,6 +592,10 @@ function findBestAIMove(currentLines, currentTriangles, player) {
                 
                 if (moveAId === bestMoveId) return -1;
                 if (moveBId === bestMoveId) return 1;
+                
+                // (**** 新功能 ****)
+                // 如果 A, B 都不是上一輪的最佳解，
+                // 則保持我們在 sort() 中已經設定好的 (隨機化的) 順序
                 return 0; 
             });
         }
@@ -614,14 +606,12 @@ function findBestAIMove(currentLines, currentTriangles, player) {
             if (!sim) continue; 
             const immediateScore = sim.scoreGained * 1000;
             
-            // (**** BugFix ****)
-            // 移除 "isStillCurrentPlayer" 邏輯
-            // 迭代加深的根節點 *總是* 呼叫 minimax(depth-1, !isMaximizingPlayer)
+            // (**** BugFix 後的正確邏輯 ****)
             const futureValue = minimax(
                 sim.newLines, 
                 sim.newTriangles, 
-                currentDepth - 1, // <--- 修正！
-                !isMaximizingPlayer, // <--- 修正！
+                currentDepth - 1, 
+                !isMaximizingPlayer,
                 alpha, 
                 beta
             );
