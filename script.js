@@ -33,11 +33,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const exportPNGButton = document.getElementById('export-png-button');
     const exportPNGButtonModal = document.getElementById('export-png-button-modal');
 
+    // (新功能) 取得批次對戰元素
     const batchCountInput = document.getElementById('batch-count-input');
     const startBatchButton = document.getElementById('start-batch-button');
     const stopBatchButton = document.getElementById('stop-batch-button');
     
     const batchStatusMessage = document.getElementById('batch-status-message');
+    // (儲存需要被禁用的控制項)
     let uiControls = [
         resetButton, exportLogButton, exportPNGButton, 
         gameModeSelect, boardSizeSelect, lineLengthSelect, 
@@ -460,7 +462,6 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.stroke();
         }
         
-        // (**** 邏輯不變 ****) 預覽線
         if (selectedDot1 && selectedDot2 && isValidPreviewLine(selectedDot1, selectedDot2, lines)) {
             ctx.beginPath();
             ctx.moveTo(selectedDot1.x, selectedDot1.y);
@@ -571,8 +572,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // (**** 移除 ****) actionBar.classList.remove('visible'); 
-        
         // (**** 新增 ****) 成功後清空
         selectedDot1 = null;
         selectedDot2 = null;
@@ -593,7 +592,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function cancelLine() {
         selectedDot1 = null;
         selectedDot2 = null;
-        // (**** 移除 ****) actionBar.classList.remove('visible');
         drawCanvas();
     }
 
@@ -695,7 +693,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function switchPlayer() {
         const isP1AI_current = (gameMode === 2);
         const isP2AI_current = (gameMode === 1 || gameMode === 2);
-        if (aiLogContainer && !isBatchRunning) { // (新) 批次模式下不顯示
+        if (aiLogContainer && !isBatchRunning) { 
             if ((currentPlayer === 1 && isP1AI_current) || (currentPlayer === 2 && isP2AI_current)) {
             } else {
                  aiLogContainer.classList.add('hidden');
@@ -779,14 +777,11 @@ document.addEventListener('DOMContentLoaded', () => {
             winnerMessage: winnerMessage
         };
 
-        // (**** 新功能 ****) 檢查是否在批次模式
         if (isBatchRunning) {
             
-            // (**** 新功能 ****) 匯出本場遊戲的 *最終棋盤* PNG
-            // (我們傳入 gameID，以便正確命名)
             exportCanvasAsPNG(batchGamesCompleted + 1); 
             
-            batchLog.push(gameHistoryLog); // 儲存本場紀錄
+            batchLog.push(gameHistoryLog); 
             batchGamesCompleted++;
             
             if (batchStatusMessage) {
@@ -794,22 +789,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             if (batchGamesCompleted < batchTotalGames) {
-                // 還有下一場
-                setTimeout(initGame, 10); // 立即開始下一場
+                setTimeout(initGame, 10); 
             } else {
-                // 批次執行完畢
                 isBatchRunning = false;
-                toggleUIControls(true); // 解鎖 UI
-                startBatchButton.classList.remove('hidden'); // (新) 恢復按鈕
-                stopBatchButton.classList.add('hidden'); // (新) 隱藏按鈕
+                toggleUIControls(true); 
+                startBatchButton.classList.remove('hidden'); 
+                stopBatchButton.classList.add('hidden'); 
                 if (batchStatusMessage) {
                     batchStatusMessage.textContent = `批次完成！已匯出 ${batchTotalGames} 場紀錄 (CSV+PNG)。`;
                 }
-                exportBatchLog(); // 自動匯出 *所有* 紀錄 (CSV)
+                exportBatchLog(); 
             }
 
         } else {
-            // (**** 舊邏輯 ****) 非批次模式，正常顯示彈窗
             if (winnerText) {
                 winnerText.textContent = winnerMessage;
             } else {
@@ -835,9 +827,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function triggerAIMove() {
         if (isAIThinking) return; 
-        
-        if (isBatchRunning && !isBatchRunning) return;
 
+        // **** (BugFix) 移除錯誤的檢查 ****
+        // if (isBatchRunning && !isBatchRunning) return; 
+        
         const allMoves = findAllValidMoves(lines);
         if (allMoves.length === 0) {
             const playerName = (currentPlayer === 2) ? "AI 2 (Max)" : "AI 1 (Min)";
@@ -870,9 +863,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleAIMoveResult(bestMove) {
         if (aiThinkingMessage) aiThinkingMessage.classList.add('hidden');
 
-        if (!isAIThinking && isBatchRunning) {
-            return; 
-        }
+        // **** (BugFix) 移除錯誤的檢查 ****
+        // if (!isAIThinking && isBatchRunning) { 
+        //     return; 
+        // }
 
         if (bestMove && bestMove.dot1 && bestMove.dot2) {
             const dotA = dots[bestMove.dot1.r][bestMove.dot1.c];
@@ -1040,7 +1034,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return result;
     }
 
-    // 啟用/禁用所有 UI 控制項
+    // (新功能) 啟用/禁用所有 UI 控制項
     function toggleUIControls(isEnabled) {
         uiControls.forEach(control => {
             if (control) {
@@ -1049,7 +1043,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 開始批次對戰
+    // (新功能) 開始批次對戰
     function startBatchRun() {
         const gameCount = parseInt(batchCountInput.value, 10);
         if (isNaN(gameCount) || gameCount <= 0) {
@@ -1077,7 +1071,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initGame();
     }
     
-    // 終止批次對戰
+    // (新功能) 終止批次對戰
     function stopBatchRun() {
         if (!isBatchRunning) return; 
 
@@ -1106,7 +1100,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 匯出 *批次* 遊戲紀錄 (多場合併)
+    // (新功能) 匯出 *批次* 遊戲紀錄 (多場合併)
     function exportBatchLog() {
         if (!batchLog || batchLog.length === 0) {
             alert("沒有可匯出的批次紀錄。");
@@ -1179,6 +1173,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 產生檔案名稱
         const date = new Date();
         const timestamp = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}_${String(date.getHours()).padStart(2, '0')}${String(date.getMinutes()).padStart(2, '0')}`;
+        // (新檔名)
         link.setAttribute("download", `triangle_batch_log_${batchLog.length}_games_${timestamp}.csv`);
         
         document.body.appendChild(link); 
@@ -1262,7 +1257,7 @@ document.addEventListener('DOMContentLoaded', () => {
         URL.revokeObjectURL(url);
     }
     
-    // 匯出棋盤為 PNG (可選傳入 gameID)
+    // (新功能) 匯出棋盤為 PNG (可選傳入 gameID)
     function exportCanvasAsPNG(gameID = null) {
         if (!canvas) {
             alert("找不到畫布！");
@@ -1318,14 +1313,11 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.addEventListener('mouseleave', handleDragLeave);
     
     // (新) 觸控事件
-    // { passive: false } 是為了能呼叫 e.preventDefault()
     canvas.addEventListener('touchstart', handleDragStart, { passive: false });
     canvas.addEventListener('touchmove', handleDragMove, { passive: false });
     canvas.addEventListener('touchend', handleDragEnd);
     
     // (**** 舊的 Click 事件已被移除 ****)
-    // canvas.addEventListener('click', handleCanvasClick);
-    // canvas.addEventListener('touchstart', function(e) { ... });
 
     resetButton.addEventListener('click', initGame);
     resetButtonModal.addEventListener('click', initGame);
