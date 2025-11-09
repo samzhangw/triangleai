@@ -8,12 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const player2ScoreBox = document.getElementById('player2-score');
     const gameOverMessage = document.getElementById('game-over-message'); 
     
-    const winnerText = document.getElementById('winner-text'); // (使用修正後的 ID)
-    
-    // (*** 註：action-bar 相關元素已不再需要 ***)
-    // const confirmLineButton = document.getElementById('confirm-line-button');
-    // const cancelLineButton = document.getElementById('cancel-line-button');
-    // const actionBar = document.getElementById('action-bar');
+    const winnerText = document.getElementById('winner-text'); 
     
     const resetButton = document.getElementById('reset-button');
     const modalOverlay = document.getElementById('modal-overlay');
@@ -33,13 +28,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const exportPNGButton = document.getElementById('export-png-button');
     const exportPNGButtonModal = document.getElementById('export-png-button-modal');
 
-    // (新功能) 取得批次對戰元素
     const batchCountInput = document.getElementById('batch-count-input');
     const startBatchButton = document.getElementById('start-batch-button');
     const stopBatchButton = document.getElementById('stop-batch-button');
     
     const batchStatusMessage = document.getElementById('batch-status-message');
-    // (儲存需要被禁用的控制項)
     let uiControls = [
         resetButton, exportLogButton, exportPNGButton, 
         gameModeSelect, boardSizeSelect, lineLengthSelect, 
@@ -95,6 +88,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // (**** 新功能 ****) 拖曳畫線狀態
     let isDrawing = false; 
+    // (**** 新功能 ****) 用於儲存拖曳前的畫布快照
+    let dragSnapshot = null; 
 
     // 遊戲紀錄 (單場)
     let gameHistoryLog = {};
@@ -220,6 +215,14 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.width = gridWidth + PADDING * 2;
         canvas.height = gridHeight + PADDING * 2;
 
+        // (**** 新功能 ****) 初始化/重設快照畫布
+        if (!dragSnapshot) {
+            dragSnapshot = document.createElement('canvas');
+        }
+        dragSnapshot.width = canvas.width;
+        dragSnapshot.height = canvas.height;
+        // (**** 新功能 ****) 結束
+
         currentPlayer = 1;
         scores = { 1: 0, 2: 0 };
         dots = [];
@@ -228,7 +231,6 @@ document.addEventListener('DOMContentLoaded', () => {
         totalTriangles = 0;
         selectedDot1 = null;
         selectedDot2 = null;
-        // actionBar.classList.remove('visible'); // (**** 已不再需要 ****)
         modalOverlay.classList.add('hidden'); 
         
         if (aiThinkingMessage) aiThinkingMessage.classList.add('hidden');
@@ -369,7 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 繪製所有遊戲元素
+    // 繪製所有遊戲元素 (*** 這個函式現在是「主繪圖」函式 ***)
     function drawCanvas() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
@@ -447,6 +449,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // 4. 繪製選取的點 和 預覽虛線
+        // (**** 新功能 ****) 抽離成獨立函式
+        drawPreviewElements();
+    }
+    
+    // (**** 新功能 ****) 僅繪製預覽元素 (用於高速拖曳)
+    function drawPreviewElements() {
         if (selectedDot1) {
             ctx.beginPath();
             ctx.arc(selectedDot1.x, selectedDot1.y, DOT_RADIUS + 3, 0, 2 * Math.PI);
@@ -474,7 +482,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // (**** 新功能 ****) 取得滑鼠/觸控座標
+
+    // 取得滑鼠/觸控座標
     function getMousePos(e) {
         const rect = canvas.getBoundingClientRect();
         const scaleX = canvas.width / rect.width;
@@ -492,7 +501,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return { x: mouseX, y: mouseY };
     }
 
-    // (**** 新功能 ****) 滑鼠/觸控按下
+    // 滑鼠/觸控按下
     function handleDragStart(e) {
         if (isBatchRunning || isAIThinking) return;
         
@@ -510,11 +519,17 @@ document.addEventListener('DOMContentLoaded', () => {
             isDrawing = true;
             selectedDot1 = clickedDot;
             selectedDot2 = null;
-            drawCanvas();
+            
+            // (**** 新功能 ****) 拍攝快照
+            dragSnapshot.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+            dragSnapshot.getContext('2d').drawImage(canvas, 0, 0);
+
+            // 呼叫一次 *完整* 繪圖，以顯示 `selectedDot1`
+            drawCanvas(); 
         }
     }
     
-    // (**** 新功能 ****) 滑鼠/觸控移動
+    // 滑鼠/觸控移動
     function handleDragMove(e) {
         if (!isDrawing) return;
         
@@ -527,37 +542,43 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             selectedDot2 = null;
         }
-        drawCanvas();
+        
+        // (**** 優化核心 ****)
+        // 不再呼叫 drawCanvas()
+        // 1. 清除主畫布
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // 2. 貼上快照 (無預覽線的狀態)
+        ctx.drawImage(dragSnapshot, 0, 0);
+        // 3. 只畫預覽元素
+        drawPreviewElements();
     }
 
-    // (**** 新功能 ****) 滑鼠/觸控放開
+    // 滑鼠/觸控放開
     function handleDragEnd(e) {
         if (!isDrawing) return;
         isDrawing = false;
+        
+        dragSnapshot.getContext('2d').clearRect(0, 0, canvas.width, canvas.height); // 清除快照
 
-        // (selectedDot2 是在最後一次 move 時被設定的)
         if (selectedDot1 && selectedDot2 && isValidPreviewLine(selectedDot1, selectedDot2, lines)) {
-            // 如果連線有效，直接確認
             confirmLine();
         } else {
-            // 否則，取消
             cancelLine();
         }
     }
     
-    // (**** 新功能 ****) 滑鼠移出畫布
+    // 滑鼠移出畫布
     function handleDragLeave(e) {
         if (isDrawing) {
             isDrawing = false;
+            dragSnapshot.getContext('2d').clearRect(0, 0, canvas.width, canvas.height); // 清除快照
             cancelLine();
         }
     }
 
 
-    // "確認連線" 按鈕 (**** 修改 ****)
-    // 此函式現在只由 handleDragEnd 呼叫
+    // "確認連線" (由 handleDragEnd 呼叫)
     function confirmLine() {
-        // (驗證在 handleDragEnd 已做過，但為安全起見保留)
         if (!selectedDot1 || !selectedDot2) return;
         
         if (!isValidPreviewLine(selectedDot1, selectedDot2, lines)) {
@@ -572,10 +593,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // (**** 新增 ****) 成功後清空
         selectedDot1 = null;
         selectedDot2 = null;
         
+        // (**** 關鍵 ****) 
+        // 提交成功後，才呼叫 *完整* 的 drawCanvas 來固化線條
         drawCanvas();
         updateUI(); 
 
@@ -587,12 +609,21 @@ document.addEventListener('DOMContentLoaded', () => {
         switchPlayer();
     }
 
-    // "取消選取" 按鈕 (**** 修改 ****)
-    // 此函式現在只由 handleDragEnd 或 handleDragLeave 呼叫
+    // "取消選取"
     function cancelLine() {
         selectedDot1 = null;
         selectedDot2 = null;
-        drawCanvas();
+        
+        // (**** 新功能 ****)
+        // 不再呼叫 drawCanvas()，
+        // 而是清除主畫布，並從快照恢復 (如果快照存在)
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (dragSnapshot && dragSnapshot.width > 0) {
+            ctx.drawImage(dragSnapshot, 0, 0);
+        } else {
+            // (備用) 如果快照遺失，則完整重繪
+            drawCanvas();
+        }
     }
 
 
@@ -828,9 +859,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function triggerAIMove() {
         if (isAIThinking) return; 
 
-        // **** (BugFix) 移除錯誤的檢查 ****
-        // if (isBatchRunning && !isBatchRunning) return; 
-        
         const allMoves = findAllValidMoves(lines);
         if (allMoves.length === 0) {
             const playerName = (currentPlayer === 2) ? "AI 2 (Max)" : "AI 1 (Min)";
@@ -862,11 +890,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleAIMoveResult(bestMove) {
         if (aiThinkingMessage) aiThinkingMessage.classList.add('hidden');
-
-        // **** (BugFix) 移除錯誤的檢查 ****
-        // if (!isAIThinking && isBatchRunning) { 
-        //     return; 
-        // }
 
         if (bestMove && bestMove.dot1 && bestMove.dot2) {
             const dotA = dots[bestMove.dot1.r][bestMove.dot1.c];
@@ -1034,7 +1057,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return result;
     }
 
-    // (新功能) 啟用/禁用所有 UI 控制項
+    // 啟用/禁用所有 UI 控制項
     function toggleUIControls(isEnabled) {
         uiControls.forEach(control => {
             if (control) {
@@ -1043,7 +1066,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // (新功能) 開始批次對戰
+    // 開始批次對戰
     function startBatchRun() {
         const gameCount = parseInt(batchCountInput.value, 10);
         if (isNaN(gameCount) || gameCount <= 0) {
@@ -1071,7 +1094,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initGame();
     }
     
-    // (新功能) 終止批次對戰
+    // 終止批次對戰
     function stopBatchRun() {
         if (!isBatchRunning) return; 
 
@@ -1100,7 +1123,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // (新功能) 匯出 *批次* 遊戲紀錄 (多場合併)
+    // 匯出 *批次* 遊戲紀錄 (多場合併)
     function exportBatchLog() {
         if (!batchLog || batchLog.length === 0) {
             alert("沒有可匯出的批次紀錄。");
@@ -1173,7 +1196,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // 產生檔案名稱
         const date = new Date();
         const timestamp = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}_${String(date.getHours()).padStart(2, '0')}${String(date.getMinutes()).padStart(2, '0')}`;
-        // (新檔名)
         link.setAttribute("download", `triangle_batch_log_${batchLog.length}_games_${timestamp}.csv`);
         
         document.body.appendChild(link); 
@@ -1317,8 +1339,6 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.addEventListener('touchmove', handleDragMove, { passive: false });
     canvas.addEventListener('touchend', handleDragEnd);
     
-    // (**** 舊的 Click 事件已被移除 ****)
-
     resetButton.addEventListener('click', initGame);
     resetButtonModal.addEventListener('click', initGame);
     
